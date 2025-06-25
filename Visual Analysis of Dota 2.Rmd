@@ -1,0 +1,1145 @@
+---
+title: "Visual Analysis of Dota 2 Match Data /n
+          7CS519 Information Visualisation"
+author: "Student ID: 100777241"
+date: "2025-05-20"
+output:
+  pdf_document:
+    toc: true
+    toc_depth: 2
+    number_sections: true
+    citation_package: natbib
+    keep_tex: true
+    latex_engine: xelatex
+bibliography: references.bib
+csl: harvard.csl
+---
+
+```{r setup, include=FALSE}
+library(here)
+library(readxl)
+library(skimr)
+library(dplyr)
+library(jsonlite)
+library(tidyverse)
+library(patchwork)
+library(RColorBrewer)
+library(ggplot2)
+library(scales)
+library(viridis)
+library(ggrepel)
+library(randomcoloR)
+library(forcats)
+library(RColorBrewer)
+library(tidyr)
+library(purrr)
+
+
+
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+\newpage
+
+# Introduction
+
+This report presents a data-driven exploration of hero dynamics in *Dota 2*, using a dataset comprising approximately 100,000 public matches played on August 13, 2016 — the final day of *The International 2016* (TI6), one of the most prestigious tournaments in the game’s competitive history [@wikipedia2016]. As a multiplayer online battle arena (MOBA), *Dota 2* pits two teams of five players against one another, with each participant selecting a unique hero characterized by distinct abilities, roles, and synergies.
+
+The aim of this analysis is to investigate how factors such as hero pick frequency, win rate, regional preferences, and five-hero team compositions influence match outcomes. In particular, the study examines whether frequently picked heroes are also the most effective, how performance differs by team alignment (Radiant vs. Dire), and whether professional meta trends are mirrored in public play. These questions are addressed through a combination of statistical aggregation and visual analysis.
+
+The dataset’s temporal alignment with TI6 enables a valuable comparison between community-level match behavior and professional hero usage. To assess its representativeness, findings are contextualized using hero statistics from Liquipedia [@liquipedia2016]  and Dotabuff’s TI6 recap [@dotabuff2016]. Notably, heroes like **Mirana**, **Juggernaut**, and **Elder Titan** featured prominently in both professional and public matches, while tournament-dominant heroes such as **Shadow Demon** saw minimal public adoption — revealing gaps between strategic theory and practice.
+
+A dual-tool approach was employed: R (with `ggplot2` and `dplyr`) for data wrangling and precise visualization, and Tableau for interactive dashboarding and exploratory storytelling. This combination allows for both reproducibility and user-friendly presentation. Informed by visualization theory [@cleveland1984; @kabacoff2018], this report emphasizes perceptual clarity and analytical rigor to draw insights relevant to both game strategy and data communication.
+
+
+
+# Dataset Justification and Research Questions
+
+##  Dataset Selection
+
+This dataset is ideal for visual analysis due to its sparsity and dimensionality. Each row represents a full match with binary indicators for 113 possible hero selections (values of `1` for Radiant, `-1` for Dire), as well as metadata including win outcome, region, gamemode, and gametype. This structure enables both individual-level and team-level analysis.
+
+Key advantages include:
+
+- **Structural sparsity**: Only 10 of 113 heroes are active per match
+- **Temporal specificity**: Matches align with the final date of TI6
+- **Rich metadata**: Allows regional and contextual segmentation
+- **Public reproducibility**: Based on open, anonymized game data
+
+Comparisons to TI6 professional match data (Liquipedia, 2016; Dotabuff, 2016) confirm that many of the same heroes were prevalent. However, some highly successful professional picks (e.g. Shadow Demon, Oracle) were underrepresented in public games, underscoring the value of examining both datasets side-by-side.
+
+\newpage
+
+## Research Questions
+
+Each of the following questions is addressed through visual analysis, with corresponding evidence labeled in **Appendix A (R)** and **Appendix B (Tableau)**:
+
+1. **Are popular heroes also the most successful?**  
+   → See **Figure A1 (R)** & **Figure B1 (Tableau)** (Top Picks) vs **Figure A2 (R)** & **Figure B2 (Tableau)** (Top Win Rates)
+
+2. **Does team alignment affect win probability (Radiant vs Dire)?**  
+   → See **Figure A3 (R)** and **Figure B3 (Tableau)**
+
+3. **Do hero picks and win rates vary by region?**  
+   → See **Figure A4 (R)** vs **Figure B5 (Tableau)**
+
+4. **Which team compositions yield the highest win rates?**  
+   →**Figure A6 (R)** and **Figure B6 (Tableau)** presents the top 10 five-hero combinations based on win performance.
+
+5. **Do public match trends reflect professional tournament strategies?**  
+   →  Findings are contextualized through comparison with TI6 hero data
+
+---
+# Findings and Interpretation
+
+## Key Observations
+
+Popularity ≠ performance: Pudge and Phantom Assassin were among the most picked heroes (Figure A1) but did not rank in the top win-rate list (Figure A2). Heroes like Omniknight and Elder Titan, though picked less, had win rates above 60%.
+
+Slight Radiant advantage: Radiant teams won slightly more often than Dire (Figure A3), consistent with historical community findings about map asymmetry and early objective control.
+
+Minimal regional divergence: Most regions shared similar top picks (Figure A4), although Omniknight surfaced as a top winner in four different servers (Figure A5), highlighting global alignment around strong hero selections.
+
+Team synergy boosts outcome: Some five-hero combinations (e.g., Abaddon, Beastmaster, Luna, Lycanthrope, Vengeful Spirit) achieved 100% win rates across multiple games (Figure A6), emphasizing the impact of coordinated drafts.
+
+Discrepancy with professional meta: Despite Shadow Demon’s dominance at TI6 (Liquipedia, 2016), this hero was rarely selected in public games — suggesting differences in execution complexity or player familiarity.
+---
+
+# Tool Comparison: R vs Tableau
+
+## R (tidyverse + ggplot2)
+
+R was employed for the core data wrangling, metric development, and analytical visualizations. Leveraging the `tidyverse` ecosystem — including `dplyr`, `tidyr`, and `ggplot2` [@Wickham2024; @rstudio2024] — we transformed a sparse, high-dimensional dataset into structured insights. Specific tasks included:
+
+- Multi-condition aggregations for computing hero win rates and team outcomes
+- Win probability segmentation by region and game type
+- Generation of 5-hero synergy combinations
+- Export of preprocessed data to Tableau-ready CSVs
+
+The high degree of control in R allowed us to fine-tune both the data logic and the visual grammar of plots, particularly for Figures A1–A6. In addition, reproducibility through scripting ensured transparent analysis pipelines.
+
+While R offers unparalleled versatility, it comes with a steep learning curve. Users without a programming background may find it less accessible for rapid, low-barrier exploration or presentation.
+
+## Tableau
+
+Tableau was used to build the interactive dashboard presented in Appendix B (Figure B7), synthesizing the results into a visually navigable story. Its strength lies in enabling non-programmers to build, explore, and communicate insights through simple drag-and-drop mechanics [@tableau2024].
+
+Using the preprocessed datasets exported from R, Tableau offered:
+
+- **Interactive filters** for regions and heroes, allowing users to isolate and explore specific match characteristics (e.g., filtering by *Southeast Asia* reveals that *Mirana* is popular but not among top win-rate heroes).
+- **Visual juxtaposition** of metrics, such as comparing pick frequency (Figure B1) with win rate (Figure B2).
+- **Hover and drill-down functionality**, enhancing engagement and understanding.
+- **Cross-linked dashboards**, where selecting a region dynamically updates all charts.
+
+Although Tableau lacks support for complex metric creation (e.g., hero synergy logic), its user-centric design and interactivity make it ideal for stakeholder-facing reports. The visual design was harmonized with R (e.g., consistent color palette for heroes) to reduce cognitive friction when comparing across tools.
+
+## Chart Design Rationale
+
+Visualization choices followed best-practice guidelines from Cleveland and McGill [@cleveland1984], who demonstrated that aligned axis-based encodings (e.g., bar length) are cognitively superior to angles or areas for quantitative comparison.
+
+- **Horizontal bar charts** were used to represent ranked hero pick counts and win rates (Figures B1–B2).
+- **Dot plots** were applied for region-based categorical comparisons (Figures B4–B5), minimizing clutter in dense layouts.
+- **Gradient-filled bars** visually reinforced win rate strength in the synergy chart (Figure B6).
+
+Advanced chart types such as Sankey flows, violin plots, and diverging bars were evaluated but excluded to avoid unnecessary complexity and reader confusion [@kabacoff2018].
+
+## Summary of Tool Suitability
+
+| Task                                            | Recommended Tool |
+|------------------------------------------------|------------------|
+| Statistical summarization & transformation      | R                |
+| Interactive filtering & user navigation         | Tableau          |
+| Reproducible scripting & auditability           | R                |
+| Storytelling dashboards for non-technical users | Tableau          |
+| Highly customized visual aesthetics             | R                |
+| Rapid prototyping of analytical views           | Tableau          |
+
+By integrating both platforms, we achieved **analytical depth with R** and **accessible narrative delivery with Tableau**. This combination ensured rigorous backend logic with visually communicative front-end dashboards — a best-of-both-worlds approach suited for both technical and non-technical audiences.
+
+---
+
+# Appendix A
+
+
+```{r Data Preparation, include=FALSE}
+
+# Data Preparation 
+
+# Load the dataset (no headers)
+df <- read.csv("dota2Train.csv", header = FALSE)
+
+# Manually assign proper column names
+colnames(df)[1:4] <- c("win", "clusterid", "gamemode", "gametype")
+colnames(df)[5:117] <- paste0("hero", 1:113)  # 113 hero features
+
+# Read JSONs
+heroes <- fromJSON("heroes.json")$heroes
+mods <- fromJSON("mods.json")$mods
+lobbies <- fromJSON("lobbies.json")$lobbies
+regions <- fromJSON("regions.json")$regions
+
+# Create mapping vectors
+gamemode_map <- setNames(mods$name, mods$id)
+gametype_map <- setNames(lobbies$name, lobbies$id)
+region_map <- setNames(regions$name, regions$id)
+hero_map <- setNames(heroes$localized_name, heroes$id)
+
+# Map gamemode, gametype, clusterid to names
+df$gamemode <- gamemode_map[as.character(df$gamemode)]
+df$gametype <- gametype_map[as.character(df$gametype)]
+df$region <- region_map[as.character(df$clusterid)]
+
+# Replace heroX with real hero names, skipping missing IDs
+hero_colnames <- paste0("hero", 1:113)
+real_names <- hero_map[as.character(1:113)]
+real_names[is.na(real_names)] <- paste0("Hero_", which(is.na(real_names)))
+names(df)[5:117] <- real_names
+
+
+unique(df$gametype)
+table(df$gamemode)
+
+# Export the mapped dataset
+write.csv(df, here("dota2_cleaned.csv"), row.names = FALSE)
+
+```
+
+
+
+
+``` {r EDA, echo=FALSE}
+
+# EDA Analysis
+
+# Read the cleaned dataset
+dota <- read.csv("dota2_cleaned.csv", header = TRUE)
+
+```
+
+
+
+
+``` {r Basic Descriptive, echo=FALSE}
+
+## Basic Descriptive Stats & Distributions
+
+
+#➤ Distribution of gamemodes:
+ggplot(dota, aes(x = gamemode)) +
+  geom_bar(fill = "steelblue") +
+  theme_minimal() +
+  coord_flip() +
+  labs(title = "Match Count per Game Mode", x = "Game Mode", y = "Number of Matches")
+
+#➤ Win rate by gametype:
+dota %>%
+  group_by(gametype) %>%
+  summarise(win_rate = mean(win)) %>%
+  ggplot(aes(x = reorder(gametype, win_rate), y = win_rate)) +
+  geom_col(fill = "darkgreen") +
+  coord_flip() +
+  labs(title = "Radiant Win Rate by Game Type", x = "Game Type", y = "Win Rate")
+```
+
+
+## Hero Frequency Analysis
+
+``` {r Hero Frequency, echo=FALSE}
+#➤ Most frequently picked heroes:
+
+hero_cols <- names(dota)[grepl("^[A-Z]", names(dota))] 
+
+hero_counts <- dota %>%
+  pivot_longer(cols = all_of(hero_cols), names_to = "hero", values_to = "picked") %>%
+  filter(picked != 0) %>%
+  group_by(hero) %>%
+  summarise(pick_count = n(), .groups = "drop") %>%
+  arrange(desc(pick_count)) %>%
+  mutate(
+    pick_percent = (pick_count / sum(pick_count)) * 100,
+    label_text = paste0(pick_count, " (", round(pick_percent, 1), "%)")
+  )
+
+hero_counts$highlight <- ifelse(row_number(hero_counts$pick_count) <= 5, "top", "rest")
+```
+
+
+### Figure A1: Top 20 Most Picked Heroes
+
+``` {r Figure A1: Top 20 Most Picked Heroes, echo=FALSE}
+# Plot
+ggplot(hero_counts[1:20,], aes(x = reorder(hero, pick_count), y = pick_count, fill = pick_count)) +
+  geom_col(show.legend = FALSE) +
+  geom_text(aes(label = label_text), hjust = -0.1, size = 3.5, color = "black") +
+  scale_fill_gradient(low = "#FFE0B2", high = "#E65100") +  
+  coord_flip() +
+  labs(
+    title = "Figure A1: Top 20 Most Picked Heroes",
+    subtitle = "With exact pick counts and relative frequencies",
+    x = "Hero",
+    y = "Pick Count"
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(
+    plot.title = element_text(size = 16, face = "bold"),
+    plot.subtitle = element_text(size = 12),
+    axis.text.x = element_text(angle = 0),
+    plot.margin = margin(10, 10, 10, 10)
+  ) +
+  ylim(0, max(hero_counts$pick_count[1:20]) * 1.1)
+
+```
+
+## Win Rate per Hero
+``` {r Win Rate Hero, echo=FALSE}
+
+# Create win rate per hero
+win_by_hero <- dota %>%
+  select(win, all_of(hero_cols)) %>%
+  pivot_longer(-win, names_to = "hero", values_to = "picked") %>%
+  filter(picked != 0) %>%
+  group_by(hero) %>%
+  summarise(
+    matches = n(),
+    wins = sum((win == 1 & picked == 1) | (win == -1 & picked == -1)),
+    win_rate = wins / matches,
+    .groups = "drop"
+  ) %>%
+  arrange(desc(win_rate))
+
+
+# Calculate average win rate
+avg_win_rate <- mean(win_by_hero$win_rate)
+
+# Use only top 20 heroes by win rate
+top20_win <- win_by_hero[1:20, ]
+```
+
+
+### Figure A2: Top 20 Heroes by Win Rate
+``` {r Figure A2: Top 20 Heroes by Win Rate, echo=FALSE}
+# Plot
+ggplot(top20_win, aes(x = reorder(hero, win_rate), y = win_rate, fill = win_rate)) +
+  geom_col(width = 0.8) +
+  scale_fill_gradientn(colors = c("#deebf7", "#9ecae1", "#3182bd", "#08519c")) +
+  geom_text(aes(label = paste0(round(win_rate * 100, 1), "%")),
+            hjust = -0.1, size = 3.5, color = "black") +
+  coord_flip() +
+  labs(
+    title = "Figure A2: Top 20 Heroes by Win Rate",
+    subtitle = "Ranked bar chart",
+    x = "Hero",
+    y = "Win Rate"
+  ) +
+  scale_y_continuous(
+    labels = percent_format(accuracy = 1),
+    limits = c(0, max(top20_win$win_rate) * 1.1)
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(
+    plot.title = element_text(size = 16, face = "bold"),
+    plot.subtitle = element_text(size = 12),
+    axis.text.x = element_text(angle = 0),
+    legend.position = "none"
+  )
+
+
+```
+
+
+
+
+## Radiant vs Dire Win Count
+
+``` {r Radiant-Dire Win, echo=FALSE}
+
+# Count wins by team
+team_wins <- dota %>%
+  mutate(winning_team = ifelse(win == 1, "Radiant", "Dire")) %>%
+  count(winning_team)
+
+
+# Calculate percentages
+team_wins <- team_wins %>%
+  mutate(percent = n / sum(n),
+         label = paste0(n, " (", percent(percent, accuracy = 0.1), ")"))
+
+# Set colors from ColorBrewer Set2
+colors <- c("Radiant" = "#66c2a5", "Dire" = "#fc8d62")
+
+```
+
+
+
+### Figure A3: Number of Wins by Team
+``` {r Figure A3: Number of Wins by Team, echo=FALSE}
+# Plot
+ggplot(team_wins, aes(x = winning_team, y = n, fill = winning_team)) +
+  geom_col(width = 0.6, show.legend = FALSE) +
+  geom_text(aes(label = label), vjust = -0.5, size = 4.2, color = "black") +
+  scale_fill_manual(values = colors) +
+  labs(
+    title = "Figure A3: Number of Wins by Team",
+    subtitle = "Radiant vs Dire win distribution with absolute and relative values",
+    x = "Winning Team",
+    y = "Match Count"
+  ) +
+  scale_y_continuous(
+    expand = expansion(mult = c(0, 0.1))
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(
+    plot.title = element_text(size = 16, face = "bold"),
+    plot.subtitle = element_text(size = 12),
+    axis.text.x = element_text(size = 11),
+    axis.text.y = element_text(size = 11)
+  )
+
+```
+
+
+
+## Top 3 Most Picked Heroes Per Region
+
+``` {r Heroes per Region, echo=FALSE}
+library(tidyverse)
+
+
+# Select top 3 most picked heroes per region
+top3_picked_per_region <- dota %>%
+  select(region, all_of(hero_cols)) %>%
+  pivot_longer(-region, names_to = "hero", values_to = "pick") %>%
+  filter(pick != 0) %>%
+  group_by(region, hero) %>%
+  summarise(pick_count = n(), .groups = "drop") %>%
+  group_by(region) %>%
+  slice_max(pick_count, n = 3) %>%
+  ungroup()
+
+# Sort regions by max pick count for better y-axis readability
+region_order_top3 <- top3_picked_per_region %>%
+  group_by(region) %>%
+  summarise(max_pick = max(pick_count)) %>%
+  arrange(desc(max_pick)) %>%
+  pull(region)
+
+top3_picked_per_region$region <- factor(top3_picked_per_region$region,
+                                        levels = region_order_top3)
+
+# Use consistent color palette (Set3 reused and repeated if needed)
+unique_heroes_top3 <- sort(unique(top3_picked_per_region$hero))
+n_top3 <- length(unique_heroes_top3)
+hero_colors_top3 <- setNames(
+  rep(brewer.pal(12, "Set3"), length.out = n_top3),
+  unique_heroes_top3
+)
+```
+
+
+### Figure A4: Top 3 Most Picked Heroes per Region
+
+``` {r Figure A4: Top 3 Most Picked Heroes per Region, echo=FALSE}
+# Plot
+ggplot(top3_picked_per_region, aes(x = pick_count, y = region, color = hero)) +
+  geom_point(size = 6, alpha = 0.9) +
+  scale_color_manual(values = hero_colors_top3) +
+  labs(
+    title = "Figure A4: Top 3 Most Picked Heroes per Region",
+    x = "Pick Count",
+    y = "Region",
+    color = "Hero"
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(
+    panel.grid.major.y = element_line(color = "gray90", size = 0.3),
+    panel.grid.major.x = element_line(color = "gray85", size = 0.3),
+    plot.title = element_text(size = 16, face = "bold", margin = margin(b = 12)),
+    axis.text.y = element_text(size = 11),
+    axis.text.x = element_text(size = 11),
+    legend.position = "right",
+    legend.title = element_text(size = 11),
+    legend.text = element_text(size = 10)
+  )
+```
+
+
+
+## Hero Win Rate by Region
+
+``` {r Hero win rate_Region, echo=FALSE}
+
+# Create hero_region_winrate
+hero_region_winrate <- dota %>%
+  select(win, region, all_of(hero_cols)) %>%
+  pivot_longer(cols = all_of(hero_cols), names_to = "hero",
+               values_to = "picked") %>%
+  filter(picked != 0) %>%
+  group_by(region, hero) %>%
+  summarise(
+    matches = n(),
+    wins = sum((win == 1 & picked == 1) | (win == -1 & picked == -1)),
+    win_rate = wins / matches,
+    .groups = "drop"
+  )
+
+
+# Select only the top 1 hero by win rate per region
+top1_winrate_per_region <- hero_region_winrate %>%
+  filter(!is.na(win_rate) & win_rate > 0) %>%
+  group_by(region) %>%
+  slice_max(order_by = win_rate, n = 1, with_ties = FALSE) %>%
+  ungroup()
+
+# Prepare hero color palette again (now fewer colors needed)
+unique_heroes_top1 <- sort(unique(top1_winrate_per_region$hero))
+n_top1 <- length(unique_heroes_top1)
+hero_colors_top1 <- setNames(
+  rep(brewer.pal(12, "Set3"), length.out = n_top1),
+  unique_heroes_top1
+)
+
+# Sort regions by top hero win rate
+region_order_top1 <- top1_winrate_per_region %>%
+  arrange(desc(win_rate)) %>%
+  pull(region)
+
+top1_winrate_per_region$region <- factor(top1_winrate_per_region$region, 
+                                         levels = region_order_top1)
+```
+
+
+### Figure A5: Top Hero by Win Rate per Region
+
+``` {r Figure A5: Top Hero by Win Rate per Region, echo=FALSE}
+
+# Final Plot
+ggplot(top1_winrate_per_region, aes(x = win_rate, y = region, color = hero)) +
+  geom_point(size = 6, alpha = 0.85) +
+  scale_color_manual(values = hero_colors_top1) +
+  scale_x_continuous(labels = percent_format(accuracy = 1), 
+                     limits = c(0.5, 1.01)) +
+  labs(
+    title = "Figure A5: Top Hero by Win Rate per Region",
+    x = "Win Rate",
+    y = "Region",
+    color = "Hero"
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(
+    panel.grid.major.y = element_line(color = "gray90", size = 0.3),
+    panel.grid.major.x = element_line(color = "gray85", size = 0.3),
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(size = 16, face = "bold", margin = margin(b = 12)),
+    axis.text.y = element_text(size = 11),
+    axis.text.x = element_text(size = 11),
+    legend.position = "right",
+    legend.title = element_text(size = 11),
+    legend.text = element_text(size = 10)
+  )
+```
+
+
+
+## Top Winning Combos
+
+``` {r Top Winning Combos, echo=FALSE}
+
+
+# Step 1: Subset hero columns
+hero_matrix <- dota %>%
+  select(all_of(hero_cols))
+
+# Step 2: Extract Radiant and Dire heroes
+get_team_combos <- function(team_val = 1) {
+  hero_matrix %>%
+    mutate(row = row_number()) %>%
+    pivot_longer(-row, names_to = "hero", values_to = "value") %>%
+    filter(value == team_val) %>%
+    group_by(row) %>%
+    summarise(team_heroes = list(sort(hero))) %>%
+    mutate(team = ifelse(team_val == 1, "Radiant", "Dire"))
+}
+
+radiant_teams <- get_team_combos(1) %>% mutate(win = dota$win)
+dire_teams    <- get_team_combos(-1) %>% mutate(win = -dota$win) 
+
+# Step 3: Combine both teams
+team_data <- bind_rows(radiant_teams, dire_teams)
+
+# Step 4: Create a combo key
+team_data <- team_data %>%
+  mutate(combo_key = map_chr(team_heroes, ~ paste(sort(.x), collapse = ", ")))
+
+
+# Aggregate and calculate win rates
+combo_stats <- team_data %>%
+  group_by(combo_key) %>%
+  summarise(
+    matches = n(),
+    wins = sum(win == 1),
+    win_rate = wins / matches,
+    .groups = "drop"
+  ) %>%
+  filter(matches >= 4) %>%  # ignore very rare combos
+  arrange(desc(win_rate))
+
+# Sort by win_rate, then by match count (both descending)
+top_combos <- combo_stats %>%
+  filter(matches >= 4) %>%
+  arrange(desc(win_rate), desc(matches)) %>%
+  slice_head(n = 10)
+
+
+# Wrap combo labels at 40 characters (optional: adjust if needed)
+top_combos$combo_key_wrapped <- str_wrap(top_combos$combo_key, width = 40)
+
+```
+
+
+
+### Figure A6: Top 10 Hero Combinations by Win Rate
+
+``` {r Figure A6: Top 10 Hero Combinations by Win Rate, echo=FALSE}
+
+# Plot
+ggplot(top_combos, aes(x = reorder(combo_key_wrapped, win_rate + matches / 1000), y = win_rate, fill = win_rate)) +
+  geom_col(width = 0.7) +
+  scale_fill_gradientn(colors = c("#e5f5e0", "#a1d99b", "#41ab5d", "#006d2c")) + 
+  coord_flip() +
+  labs(
+    title = "Figure A6: \nTop 10 Hero Combinations\n by Win Rate",
+    subtitle = "Sorted by Win Rate Prioritized by Match Count \n(min. 4 matches)",
+    x = "Hero Combination",
+    y = "Win Rate"
+  ) +
+  scale_y_continuous(
+    labels = scales::label_percent(accuracy = 1),
+    breaks = seq(0, 1, 0.25),
+    limits = c(0, 1.15)
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    plot.background = element_rect(fill = "white", color = NA),
+    panel.background = element_rect(fill = "white", color = NA),
+    plot.title = element_text(size = 16, face = "bold", margin = margin(t = 30, b = 12)),
+    plot.subtitle = element_text(size = 11, margin = margin(t = 5, b = 15)),
+    axis.text.y = element_text(size = 9),
+    legend.position = "none"  
+  )
+
+
+```
+\newpage
+
+# Appendix B: Tableau Summary Dashboard
+
+
+![Figure B1: Top 20 Most Picked Heroes](figures/Figure B1.png)
+
+
+![Figure B2: Top 20 Heroes by Win Rate](figures/Figure B2.png)
+
+
+![Figure B3: Win Distribution by Team (Radiant vs Dire)](figures/Figure B3.png)
+
+
+![Figure B4: Top 3 Most Picked Heroes per Region](figures/Figure B4.png)
+
+
+![Figure B5: Top Hero by Win Rate per Region](figures/Figure B5.png)
+
+
+![Figure B6: Top 10 Hero Combinations by Win Rate](figures/Figure B6.png)
+
+
+
+\newpage
+
+![Figure B7: Tableau Summary Dashboard](figures/dashboard_final.png)
+
+\newpage
+
+# The code
+
+```{r code_Data Preparation, echo=TRUE, eval=FALSE}
+# Load the dataset (no headers)
+df <- read.csv("dota2Train.csv", header = FALSE)
+
+# Manually assign proper column names
+colnames(df)[1:4] <- c("win", "clusterid", "gamemode", "gametype")
+colnames(df)[5:117] <- paste0("hero", 1:113)  # 113 hero features
+
+# Read JSONs
+heroes <- fromJSON("heroes.json")$heroes
+mods <- fromJSON("mods.json")$mods
+lobbies <- fromJSON("lobbies.json")$lobbies
+regions <- fromJSON("regions.json")$regions
+
+# Create mapping vectors
+gamemode_map <- setNames(mods$name, mods$id)
+gametype_map <- setNames(lobbies$name, lobbies$id)
+region_map <- setNames(regions$name, regions$id)
+hero_map <- setNames(heroes$localized_name, heroes$id)
+
+# Map gamemode, gametype, clusterid to names
+df$gamemode <- gamemode_map[as.character(df$gamemode)]
+df$gametype <- gametype_map[as.character(df$gametype)]
+df$region <- region_map[as.character(df$clusterid)]
+
+# Replace heroX with real hero names, skipping missing IDs
+hero_colnames <- paste0("hero", 1:113)
+real_names <- hero_map[as.character(1:113)]
+real_names[is.na(real_names)] <- paste0("Hero_", which(is.na(real_names)))
+names(df)[5:117] <- real_names
+
+
+unique(df$gametype)
+table(df$gamemode)
+
+# Export the mapped dataset
+write.csv(df, here("dota2_cleaned.csv"), row.names = FALSE)
+
+```
+
+
+**EDA Analysis**
+
+
+``` {r code_EDA, echo=TRUE, eval=FALSE}
+
+
+# Read the cleaned dataset
+dota <- read.csv("dota2_cleaned.csv", header = TRUE)
+
+```
+
+**Basic Descriptive Stats & Distributions**
+
+``` {r code_Basic Descriptive, echo=TRUE, eval=FALSE}
+
+#➤ Count matches by region:
+dota %>%
+  count(region, sort = TRUE)
+
+#➤ Distribution of gamemodes:
+ggplot(dota, aes(x = gamemode)) +
+  geom_bar(fill = "steelblue") +
+  theme_minimal() +
+  coord_flip() +
+  labs(title = "Match Count per Game Mode", x = "Game Mode", y = "Number of Matches")
+
+#➤ Win rate by gametype:
+dota %>%
+  group_by(gametype) %>%
+  summarise(win_rate = mean(win)) %>%
+  ggplot(aes(x = reorder(gametype, win_rate), y = win_rate)) +
+  geom_col(fill = "darkgreen") +
+  coord_flip() +
+  labs(title = "Radiant Win Rate by Game Type", x = "Game Type", y = "Win Rate")
+```
+
+
+**Hero Frequency Analysis**
+
+``` {r code_Hero Frequency, echo=TRUE, eval=FALSE}
+#➤ Most frequently picked heroes:
+
+hero_cols <- names(dota)[grepl("^[A-Z]", names(dota))] 
+
+hero_counts <- dota %>%
+  pivot_longer(cols = all_of(hero_cols), names_to = "hero", values_to = "picked") %>%
+  filter(picked != 0) %>%
+  group_by(hero) %>%
+  summarise(pick_count = n(), .groups = "drop") %>%
+  arrange(desc(pick_count)) %>%
+  mutate(
+    pick_percent = (pick_count / sum(pick_count)) * 100,
+    label_text = paste0(pick_count, " (", round(pick_percent, 1), "%)")
+  )
+
+hero_counts$highlight <- ifelse(row_number(hero_counts$pick_count) <= 5, "top", "rest")
+```
+
+
+
+
+``` {r code_Figure A1: Top 20 Most Picked Heroes, echo=TRUE, eval=FALSE}
+# Plot
+ggplot(hero_counts[1:20,], aes(x = reorder(hero, pick_count), y = pick_count,
+                               fill = pick_count)) +
+  geom_col(show.legend = FALSE) +
+  geom_text(aes(label = label_text), hjust = -0.1, size = 3.5, color = "black") +
+  scale_fill_gradient(low = "#FFE0B2", high = "#E65100") +  
+  coord_flip() +
+  labs(
+    title = "Figure A1: Top 20 Most Picked Heroes",
+    subtitle = "With exact pick counts and relative frequencies",
+    x = "Hero",
+    y = "Pick Count"
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(
+    plot.title = element_text(size = 16, face = "bold"),
+    plot.subtitle = element_text(size = 12),
+    axis.text.x = element_text(angle = 0),
+    plot.margin = margin(10, 10, 10, 10)
+  ) +
+  ylim(0, max(hero_counts$pick_count[1:20]) * 1.1)
+
+```
+
+**Win Rate per Hero**
+
+``` {r code_Win Rate Hero, echo=TRUE, eval=FALSE}
+
+# Create win rate per hero
+win_by_hero <- dota %>%
+  select(win, all_of(hero_cols)) %>%
+  pivot_longer(-win, names_to = "hero", values_to = "picked") %>%
+  filter(picked != 0) %>%
+  group_by(hero) %>%
+  summarise(
+    matches = n(),
+    wins = sum((win == 1 & picked == 1) | (win == -1 & picked == -1)),
+    win_rate = wins / matches,
+    .groups = "drop"
+  ) %>%
+  arrange(desc(win_rate))
+
+
+# Calculate average win rate
+avg_win_rate <- mean(win_by_hero$win_rate)
+
+# Use only top 20 heroes by win rate
+top20_win <- win_by_hero[1:20, ]
+```
+
+
+``` {r code_Figure A2: Top 20 Heroes by Win Rate, echo=TRUE, eval=FALSE}
+# Plot
+ggplot(top20_win, aes(x = reorder(hero, win_rate), y = win_rate, fill = win_rate)) +
+  geom_col(width = 0.8) +
+  scale_fill_gradientn(colors = c("#deebf7", "#9ecae1", "#3182bd", "#08519c")) +
+  geom_text(aes(label = paste0(round(win_rate * 100, 1), "%")),
+            hjust = -0.1, size = 3.5, color = "black") +
+  coord_flip() +
+  labs(
+    title = "Figure A2: Top 20 Heroes by Win Rate",
+    subtitle = "Ranked bar chart",
+    x = "Hero",
+    y = "Win Rate"
+  ) +
+  scale_y_continuous(
+    labels = percent_format(accuracy = 1),
+    limits = c(0, max(top20_win$win_rate) * 1.1)
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(
+    plot.title = element_text(size = 16, face = "bold"),
+    plot.subtitle = element_text(size = 12),
+    axis.text.x = element_text(angle = 0),
+    legend.position = "none"
+  )
+
+
+```
+
+
+
+
+**Radiant vs Dire Win Count**
+
+``` {r code_Radiant-Dire Win, echo=TRUE, eval=FALSE}
+
+# Count wins by team
+team_wins <- dota %>%
+  mutate(winning_team = ifelse(win == 1, "Radiant", "Dire")) %>%
+  count(winning_team)
+
+
+# Calculate percentages
+team_wins <- team_wins %>%
+  mutate(percent = n / sum(n),
+         label = paste0(n, " (", percent(percent, accuracy = 0.1), ")"))
+
+# Set colors from ColorBrewer Set2
+colors <- c("Radiant" = "#66c2a5", "Dire" = "#fc8d62")
+
+```
+
+
+
+
+``` {r code_Figure A3: Number of Wins by Team, echo=TRUE, eval=FALSE}
+# Plot
+ggplot(team_wins, aes(x = winning_team, y = n, fill = winning_team)) +
+  geom_col(width = 0.6, show.legend = FALSE) +
+  geom_text(aes(label = label), vjust = -0.5, size = 4.2, color = "black") +
+  scale_fill_manual(values = colors) +
+  labs(
+    title = "Figure A3: Number of Wins by Team",
+    subtitle = "Radiant vs Dire win distribution with absolute and relative values",
+    x = "Winning Team",
+    y = "Match Count"
+  ) +
+  scale_y_continuous(
+    expand = expansion(mult = c(0, 0.1))
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(
+    plot.title = element_text(size = 16, face = "bold"),
+    plot.subtitle = element_text(size = 12),
+    axis.text.x = element_text(size = 11),
+    axis.text.y = element_text(size = 11)
+  )
+
+```
+
+
+
+**Top 3 Most Picked Heroes Per Region**
+
+``` {r code_Heroes per Region, echo=TRUE, eval=FALSE}
+library(tidyverse)
+
+
+# Select top 3 most picked heroes per region
+top3_picked_per_region <- dota %>%
+  select(region, all_of(hero_cols)) %>%
+  pivot_longer(-region, names_to = "hero", values_to = "pick") %>%
+  filter(pick != 0) %>%
+  group_by(region, hero) %>%
+  summarise(pick_count = n(), .groups = "drop") %>%
+  group_by(region) %>%
+  slice_max(pick_count, n = 3) %>%
+  ungroup()
+
+# Sort regions by max pick count for better y-axis readability
+region_order_top3 <- top3_picked_per_region %>%
+  group_by(region) %>%
+  summarise(max_pick = max(pick_count)) %>%
+  arrange(desc(max_pick)) %>%
+  pull(region)
+
+top3_picked_per_region$region <- factor(top3_picked_per_region$region,
+                                        levels = region_order_top3)
+
+# Use consistent color palette (Set3 reused and repeated if needed)
+unique_heroes_top3 <- sort(unique(top3_picked_per_region$hero))
+n_top3 <- length(unique_heroes_top3)
+hero_colors_top3 <- setNames(
+  rep(brewer.pal(12, "Set3"), length.out = n_top3),
+  unique_heroes_top3
+)
+```
+
+
+
+
+``` {r code_Figure A4: Top 3 Most Picked Heroes per Region, echo=TRUE, eval=FALSE}
+# Plot
+ggplot(top3_picked_per_region, aes(x = pick_count, y = region, color = hero)) +
+  geom_point(size = 6, alpha = 0.9) +
+  scale_color_manual(values = hero_colors_top3) +
+  labs(
+    title = "Figure A4: Top 3 Most Picked Heroes per Region",
+    x = "Pick Count",
+    y = "Region",
+    color = "Hero"
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(
+    panel.grid.major.y = element_line(color = "gray90", size = 0.3),
+    panel.grid.major.x = element_line(color = "gray85", size = 0.3),
+    plot.title = element_text(size = 16, face = "bold", margin = margin(b = 12)),
+    axis.text.y = element_text(size = 11),
+    axis.text.x = element_text(size = 11),
+    legend.position = "right",
+    legend.title = element_text(size = 11),
+    legend.text = element_text(size = 10)
+  )
+```
+
+
+
+**Hero Win Rate by Region**
+
+``` {r code_Hero win rate_Region, echo=TRUE, eval=FALSE}
+
+# Create hero_region_winrate
+hero_region_winrate <- dota %>%
+  select(win, region, all_of(hero_cols)) %>%
+  pivot_longer(cols = all_of(hero_cols), names_to = "hero",
+               values_to = "picked") %>%
+  filter(picked != 0) %>%
+  group_by(region, hero) %>%
+  summarise(
+    matches = n(),
+    wins = sum((win == 1 & picked == 1) | (win == -1 & picked == -1)),
+    win_rate = wins / matches,
+    .groups = "drop"
+  )
+
+
+# Select only the top 1 hero by win rate per region
+top1_winrate_per_region <- hero_region_winrate %>%
+  filter(!is.na(win_rate) & win_rate > 0) %>%
+  group_by(region) %>%
+  slice_max(order_by = win_rate, n = 1, with_ties = FALSE) %>%
+  ungroup()
+
+# Prepare hero color palette again (now fewer colors needed)
+unique_heroes_top1 <- sort(unique(top1_winrate_per_region$hero))
+n_top1 <- length(unique_heroes_top1)
+hero_colors_top1 <- setNames(
+  rep(brewer.pal(12, "Set3"), length.out = n_top1),
+  unique_heroes_top1
+)
+
+# Sort regions by top hero win rate
+region_order_top1 <- top1_winrate_per_region %>%
+  arrange(desc(win_rate)) %>%
+  pull(region)
+
+top1_winrate_per_region$region <- factor(top1_winrate_per_region$region, 
+                                         levels = region_order_top1)
+```
+
+
+
+
+``` {r code_Figure A5: Top Hero by Win Rate per Region, echo=TRUE, eval=FALSE}
+
+# Final Plot
+ggplot(top1_winrate_per_region, aes(x = win_rate, y = region, color = hero)) +
+  geom_point(size = 6, alpha = 0.85) +
+  scale_color_manual(values = hero_colors_top1) +
+  scale_x_continuous(labels = percent_format(accuracy = 1), 
+                     limits = c(0.5, 1.01)) +
+  labs(
+    title = "Figure A5: Top Hero by Win Rate per Region",
+    x = "Win Rate",
+    y = "Region",
+    color = "Hero"
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(
+    panel.grid.major.y = element_line(color = "gray90", size = 0.3),
+    panel.grid.major.x = element_line(color = "gray85", size = 0.3),
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(size = 16, face = "bold", margin = margin(b = 12)),
+    axis.text.y = element_text(size = 11),
+    axis.text.x = element_text(size = 11),
+    legend.position = "right",
+    legend.title = element_text(size = 11),
+    legend.text = element_text(size = 10)
+  )
+```
+
+
+
+**Top Winning Combos**
+
+``` {r code_Top Winning Combos, echo=TRUE, eval=FALSE}
+
+
+# Step 1: Subset hero columns
+hero_matrix <- dota %>%
+  select(all_of(hero_cols))
+
+# Step 2: Extract Radiant and Dire heroes
+get_team_combos <- function(team_val = 1) {
+  hero_matrix %>%
+    mutate(row = row_number()) %>%
+    pivot_longer(-row, names_to = "hero", values_to = "value") %>%
+    filter(value == team_val) %>%
+    group_by(row) %>%
+    summarise(team_heroes = list(sort(hero))) %>%
+    mutate(team = ifelse(team_val == 1, "Radiant", "Dire"))
+}
+
+radiant_teams <- get_team_combos(1) %>% mutate(win = dota$win)
+dire_teams    <- get_team_combos(-1) %>% mutate(win = -dota$win) 
+
+# Step 3: Combine both teams
+team_data <- bind_rows(radiant_teams, dire_teams)
+
+# Step 4: Create a combo key
+team_data <- team_data %>%
+  mutate(combo_key = map_chr(team_heroes, ~ paste(sort(.x), collapse = ", ")))
+
+
+# Aggregate and calculate win rates
+combo_stats <- team_data %>%
+  group_by(combo_key) %>%
+  summarise(
+    matches = n(),
+    wins = sum(win == 1),
+    win_rate = wins / matches,
+    .groups = "drop"
+  ) %>%
+  filter(matches >= 4) %>%  # ignore very rare combos
+  arrange(desc(win_rate))
+
+# Sort by win_rate, then by match count (both descending)
+top_combos <- combo_stats %>%
+  filter(matches >= 4) %>%
+  arrange(desc(win_rate), desc(matches)) %>%
+  slice_head(n = 10)
+
+
+# Wrap combo labels at 40 characters (optional: adjust if needed)
+top_combos$combo_key_wrapped <- str_wrap(top_combos$combo_key, width = 40)
+
+```
+
+
+
+
+``` {r code_Figure A6: Top 10 Hero Combinations by Win Rate, echo=TRUE, eval=FALSE}
+
+# Plot
+ggplot(top_combos, aes(x = reorder(combo_key_wrapped, win_rate + matches / 1000),
+                       y = win_rate, fill = win_rate)) +
+  geom_col(width = 0.7) +
+  scale_fill_gradientn(colors = c("#e5f5e0", "#a1d99b", "#41ab5d", "#006d2c")) + 
+  coord_flip() +
+  labs(
+    title = "Figure A6: \nTop 10 Hero Combinations\n by Win Rate",
+    subtitle = "Sorted by Win Rate Prioritized by Match Count \n(min. 4 matches)",
+    x = "Hero Combination",
+    y = "Win Rate"
+  ) +
+  scale_y_continuous(
+    labels = scales::label_percent(accuracy = 1),
+    breaks = seq(0, 1, 0.25),
+    limits = c(0, 1.15)
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    plot.background = element_rect(fill = "white", color = NA),
+    panel.background = element_rect(fill = "white", color = NA),
+    plot.title = element_text(size = 16, face = "bold", margin = margin(t = 30,
+                                                                        b = 12)),
+    plot.subtitle = element_text(size = 11, margin = margin(t = 5, b = 15)),
+    axis.text.y = element_text(size = 9),
+    legend.position = "none"  
+  )
+
+
+```
+
+---
+
+# References
+
+---
+
+
+
+
+
+
+
+
+
