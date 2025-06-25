@@ -39,7 +39,7 @@ The dataset includes:
 
 ## 🙋 About Me
 
-I am a Data Analytics Master's student and Deloitte tax technology consultant exploring advanced analytics through real-world datasets. Connect with me on [LinkedIn](www.linkedin.com/in/akis-galanidis).
+I am a Data Analytics Master's student and Deloitte tax technology consultant exploring advanced analytics through real-world datasets. Connect with me on [LinkedIn](https://www.linkedin.com/in/akis-galanidis).
 
 ---
 
